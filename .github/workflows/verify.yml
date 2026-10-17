@@ -1,0 +1,24 @@
+name: Build and tests
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: npm install --no-audit --no-fund
+      - run: npm test
+      - run: npm run build
+      - run: python -m pip install -r server/requirements.txt pytest
+      - run: python -m pytest -q server/tests
+      # Regression: tests must pass even when a developer has OpenSky credentials.
+      # Fake CI values are never used for real network traffic.
+      - run: OPENSKY_CLIENT_ID=ci-dummy OPENSKY_CLIENT_SECRET=ci-not-real OPENSKY_DAILY_CREDIT_BUDGET=3800 python -m pytest -q server/tests
