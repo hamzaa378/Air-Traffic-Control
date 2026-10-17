@@ -1,4 +1,6 @@
-# Start Here: SkyScope Daylight Atlas v3 on Windows 10/11
+# Start Here: SkyScope Daylight Atlas v3.1 on Windows 10/11
+
+> **v3.1 unit controls:** The top bar now contains **Units**. The default is **knots (kt), feet (ft), and feet per minute (ft/min)**. Select Metric or customize each reading without changing the OpenSky API or spending additional credits. See `docs/UNITS_AND_SPEED_SOURCES.md` for conversions, explanations and test steps.
 
 This guide assumes you are not already comfortable with React or FastAPI. **Follow the steps in order.** You need **two terminal windows** while developing: one for Python, one for React.
 

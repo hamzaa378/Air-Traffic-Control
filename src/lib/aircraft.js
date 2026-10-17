@@ -30,6 +30,7 @@ export function appendObservation(history = [], plane, observedAt, cap = 100) {
   return [...history, {
     latitude: plane.latitude, longitude: plane.longitude, lastContact: plane.lastContact,
     heading: plane.heading, altitude: plane.geoAltitude ?? plane.baroAltitude,
+    velocity: plane.velocity, verticalRate: plane.verticalRate,
     observedAt,
   }].slice(-cap);
 }
@@ -102,11 +103,13 @@ export function evaluateAlerts(aircraft, config, center, nowSeconds = null) {
     const altitude = plane.geoAltitude ?? plane.baroAltitude;
     if (config.lowAltitude && isNumber(altitude) && altitude < config.lowAltitudeValue) {
       alerts.push({ id: `${plane.icao24}:alt`, icao24: plane.icao24,
-        label, severity: 'warning', message: `Low altitude · ${Math.round(altitude).toLocaleString()} m` });
+        label, severity: 'warning', metric: 'altitude', siValue: altitude,
+        message: `Low altitude · ${Math.round(altitude).toLocaleString()} m` });
     }
     if (config.highSpeed && isNumber(plane.velocity) && plane.velocity > config.highSpeedValue) {
       alerts.push({ id: `${plane.icao24}:speed`, icao24: plane.icao24,
-        label, severity: 'info', message: `High speed · ${Math.round(plane.velocity)} m/s` });
+        label, severity: 'info', metric: 'speed', siValue: plane.velocity,
+        message: `High speed · ${Math.round(plane.velocity)} m/s` });
     }
     if (config.zone && kmBetween(center, [plane.latitude, plane.longitude]) <= config.zoneKm) {
       alerts.push({ id: `${plane.icao24}:zone`, icao24: plane.icao24,

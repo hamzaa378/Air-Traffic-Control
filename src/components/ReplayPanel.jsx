@@ -1,11 +1,12 @@
 import { useEffect, useState } from 'react';
-import { timeText, numberOrDash } from '../lib/format.js';
+import { timeText, numberOrDash, altitudeText, speedText, verticalSpeedText } from '../lib/format.js';
 
-export default function ReplayPanel({ flight, history, cursor, setCursor, mode }) {
+export default function ReplayPanel({ flight, history, cursor, setCursor, mode, units }) {
   const exportHistory = () => {
     if (!flight || !history.length) return;
     const content = JSON.stringify({ mode, icao24: flight.icao24, callsign: flight.callsign,
       note: mode === 'demo' ? 'Simulated example only' : 'Observations recorded by SkyScope',
+      measurementUnits: { altitude: 'm', velocity: 'm/s', verticalRate: 'm/s' },
       points: history }, null, 2);
     const url = URL.createObjectURL(new Blob([content], { type: 'application/json' }));
     const a = document.createElement('a');
@@ -33,6 +34,11 @@ export default function ReplayPanel({ flight, history, cursor, setCursor, mode }
     {history.length < 2 ? <div className="empty-small compact">Keep this page open for more observations. Recorded positions will appear here as fresh updates arrive.</div> : <>
       <div className="replay-readout"><span>{point && timeText(point.lastContact ?? point.observedAt)}</span>
         <span>{point ? `${numberOrDash(point.latitude, 3)}°, ${numberOrDash(point.longitude, 3)}°` : '—'}</span></div>
+      <div className="replay-telemetry">
+        <span>Altitude <b>{altitudeText(point?.altitude, units)}</b></span>
+        <span>Ground speed <b>{speedText(point?.velocity, units)}</b></span>
+        <span>Vertical speed <b>{verticalSpeedText(point?.verticalRate, units)}</b></span>
+      </div>
       <input aria-label="Replay aircraft observations" className="replay-slider" type="range"
         min={0} max={history.length - 1} value={Math.max(0, cursor)}
         onChange={e => { setCursor(Number(e.target.value)); setPlaying(false); }} />

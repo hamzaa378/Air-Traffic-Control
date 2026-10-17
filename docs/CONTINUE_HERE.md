@@ -55,3 +55,10 @@ Run `npm test`, `npm run build` (after npm install), and `python -m pytest -q se
 ## Unfinished external validation
 
 Run the app on a machine with npm registry and OpenSky access to complete `npm run build`, live OAuth requests, browser/mobile smoke tests, Docker Compose and final UI screenshots. Do not claim these were done in this container.
+
+
+## v3.1 handover (user-facing unit conversion)
+
+Aviation units are the default; browser-level unit selection is saved in `skyscope:units`. All normalized OpenSky/backend SI values and thresholds stay unchanged. The implementation is in `src/lib/format.js` and `src/components/UnitsControl.jsx`, with connected presenters in the flight list, inspector, filter controls, alerts, review queue and replay. `src/lib/aircraft.js` only adds SI speed and vertical rate to newly captured histories and alert metadata; this is backwards-compatible with old histories. No backend/server code or credits changed.
+
+Run `npm test` (now 26 frontend logic tests), `npm run build` and `python -m pytest -q server/tests` (18 backend tests). See `docs/UNITS_AND_SPEED_SOURCES.md` for code responsibilities, manual UI checks, known limitations, and explanations of ground/horizontal speed versus unavailable wind and airspeed fields. The current environment can run the Node and Python tests but cannot install Vite from the network; run the production build on your Windows system.

@@ -1,9 +1,9 @@
-import { altitudeText, ageText, numberOrDash, speedText, timeText } from '../lib/format.js';
+import { altitudeText, ageText, numberOrDash, speedText, timeText, verticalSpeedText, verticalDirection } from '../lib/format.js';
 import { secondsSinceContact } from '../lib/aircraft.js';
 import { observationState } from '../lib/insights.js';
 
-/** Put the six most useful facts first; keep every additional field one click away. */
-export default function FlightDetails({ flight, now }) {
+/** All values arrive in SI. The chosen units change presentation only. */
+export default function FlightDetails({ flight, now, units }) {
   if (!flight) return <div className="detail-empty">
     <div className="radar-drawing" aria-hidden="true"><span>✈</span></div>
     <h3>Nothing selected yet</h3>
@@ -14,20 +14,33 @@ export default function FlightDetails({ flight, now }) {
   const quality = observationState(flight, now);
   const positionTime = flight.timePosition ?? flight.lastContact;
   const positionAge = positionTime == null ? null : Math.max(0, now - positionTime);
+  const altitudeSource = flight.geoAltitude != null ? 'Geometric altitude' :
+    flight.baroAltitude != null ? 'Barometric altitude' : 'Altitude';
   const primary = [
-    ['Altitude', altitudeText(flight.geoAltitude ?? flight.baroAltitude)],
-    ['Ground speed', speedText(flight.velocity)],
-    ['Heading', typeof flight.heading === 'number' ? `${numberOrDash(flight.heading)}°` : 'Unknown'],
+    [altitudeSource, altitudeText(flight.geoAltitude ?? flight.baroAltitude, units)],
+    ['Ground speed', speedText(flight.velocity, units)],
+    ['Vertical speed', verticalSpeedText(flight.verticalRate, units)],
+    ['Heading', typeof flight.heading === 'number' ? `${numberOrDash(flight.heading)}°` : 'Not available'],
+    ['Vertical trend', verticalDirection(flight.verticalRate)],
     ['Last contact', ageText(age)],
-    ['Latitude', numberOrDash(flight.latitude, 4) + '°'],
-    ['Longitude', numberOrDash(flight.longitude, 4) + '°'],
   ];
   const extended = [
-    ['Vertical speed', typeof flight.verticalRate === 'number' ? `${numberOrDash(flight.verticalRate, 1)} m/s` : 'Unknown'],
+    ['Latitude', `${numberOrDash(flight.latitude, 4)}°`],
+    ['Longitude', `${numberOrDash(flight.longitude, 4)}°`],
+    ['Geometric altitude', altitudeText(flight.geoAltitude, units)],
+    ['Barometric altitude', altitudeText(flight.baroAltitude, units)],
     ['Last position', timeText(flight.timePosition)],
     ['Position age', ageText(positionAge)],
     ['Squawk', flight.squawk || '—'],
     ['ICAO24', flight.icao24.toUpperCase()],
+  ];
+  // OpenSky /states/all.velocity is speed over ground in the horizontal plane.
+  // Ground speed and horizontal speed are the SAME measurement, not two sensors.
+  const speedSources = [
+    ['Horizontal speed', speedText(flight.velocity, units), 'Same OpenSky measurement as ground speed'],
+    ['Airspeed (TAS)', speedText(flight.trueAirspeed, units), 'Not supplied by the standard OpenSky state feed'],
+    ['Airspeed (IAS)', speedText(flight.indicatedAirspeed, units), 'Not supplied by the standard OpenSky state feed'],
+    ['Wind speed', speedText(flight.windSpeed, units), 'Not supplied by the standard OpenSky state feed'],
   ];
   return <>
     <div className="selected-head">
@@ -40,7 +53,15 @@ export default function FlightDetails({ flight, now }) {
     <div className="detail-grid">{primary.map(([name, value]) =>
       <div className="detail-value" key={name}><span>{name}</span><strong>{value}</strong></div>
     )}</div>
-    <details className="expandable detail-more"><summary>All reported fields <span className="summary-hint">5 more</span></summary>
+    <details className="speed-sources" aria-label="Different types of aircraft speed">
+      <summary>Speed sources <span>Airspeed and wind availability</span></summary>
+      {speedSources.map(([name, value, note]) => <div className="speed-source" key={name}>
+        <div><span>{name}</span><strong>{value}</strong></div>
+        <small>{value === 'Not available' ? note : name === 'Horizontal speed' ? note : 'Reported measurement'}</small>
+      </div>)}
+      <p>Ground speed measures movement relative to Earth. Airspeed measures movement through the air. Wind speed is a separate weather quantity; one cannot be inferred reliably from the other here.</p>
+    </details>
+    <details className="expandable detail-more"><summary>Position and additional measurements <span className="summary-hint">{extended.length} fields</span></summary>
       <div className="detail-grid">{extended.map(([name, value]) =>
         <div className="detail-value" key={name}><span>{name}</span><strong>{value}</strong></div>
       )}</div>

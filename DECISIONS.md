@@ -19,3 +19,12 @@ This file is an example of the decisions you should understand and rewrite in yo
 **Current limitations:** Python local cache/credit ledger is process-memory-only; a restart forgets spent budget. Browser local storage is limited and per device. Replay is collected only during app use, not historical OpenSky retrieval. Background polling stops to conserve credits. OSM basemap is not guaranteed offline. Production CDN/capacity performance not benchmarked. No public HTTPS/authentication and no public deployment has been attempted.
 
 **If given another week:** 1) make backend cache, quota ledger and trail storage persistent with SQLite/Redis; 2) add live-browser Playwright tests and mobile accessibility audit; 3) implement an exportable multi-session change log; 4) test map performance with thousands of genuine upstream aircraft.
+
+
+## v3.1: user-level aviation units and speed provenance
+
+- Added independent browser preferences for knots/km/h/m/s, feet/metres and feet/minute/m/s, defaulting to aviation units. This improves readability for aviation audiences while allowing metric preferences.
+- Retained all backend/OpenSky state vectors and internal thresholds in their original SI units. The UI uses reversible conversions for numeric filter and alert inputs. Changing preferences consumes no API credits.
+- Did not attempt to calculate wind speed or true/indicated airspeed from a single OpenSky ground-velocity field. Horizontal velocity and ground speed are identical in this data source and are explicitly described as such; separate optional speed-source lines show availability.
+- Preserved previous replay data and export semantics. New observations capture raw SI velocity and vertical rate for user-unit replay; exported files describe their SI units.
+- Unit presentation is tested in `tests/units.test.js`; server behavior remains unchanged. For manual frontend/browser verification and file-by-file guide, read `docs/UNITS_AND_SPEED_SOURCES.md`.

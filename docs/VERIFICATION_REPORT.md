@@ -64,3 +64,8 @@ npm run dev
 ```
 
 Once the app loads, follow all of `docs/TESTING.md`; capture your own real browser screenshots as evidence. **Do not present mocked response tests as proof of real live OpenSky availability.**
+
+
+## v3.1 unit selection follow-up
+
+The v3.1 update adds seven automated Node.js tests, for **26 frontend logic tests passed**, and leaves **18 Python backend tests passed**. Source-only parsing of all 16 JavaScript/JSX files reported zero syntax diagnostics using the installed TypeScript parser. `scripts/verify_source.py` passed. Those checks do not consume OpenSky credits. The container cannot install npm dependencies from the npm registry, so v3.1's **`npm run build` and live-browser UI checks remain to be run on Windows**. The user's previously reported v3 Demo (11/11) and Live (8/8) passes apply to the earlier version, not automatically to this new UI revision. See `docs/UNITS_AND_SPEED_SOURCES.md` for how to verify the unit changes manually.

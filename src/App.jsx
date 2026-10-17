@@ -6,12 +6,17 @@ import ReplayPanel from './components/ReplayPanel.jsx';
 import AlertsPanel from './components/AlertsPanel.jsx';
 import SituationPanel from './components/SituationPanel.jsx';
 import WatchlistPanel from './components/WatchlistPanel.jsx';
+import UnitsControl from './components/UnitsControl.jsx';
 import useAirTraffic from './hooks/useAirTraffic.js';
 import { REGIONS, INITIAL_FILTERS, DEFAULT_ALERTS, REFRESH_MS } from './lib/regions.js';
 import { evaluateAlerts, filterAircraft } from './lib/aircraft.js';
-import { timeText } from './lib/format.js';
+import { timeText, normalizeUnits, inputValueFromSI, inputValueToSI, unitSymbol } from './lib/format.js';
 import { attentionQueue, signalSummary } from './lib/insights.js';
 
+function storedUnits() {
+  try { return normalizeUnits(JSON.parse(localStorage.getItem('skyscope:units') || '{}')); }
+  catch { return normalizeUnits({}); }
+}
 function storedMode() {
   try { return localStorage.getItem('skyscope:mode') || 'live'; } catch { return 'live'; }
 }
@@ -38,6 +43,7 @@ export default function App() {
   // Keep all data and data-source behavior from v2.1; this release changes presentation.
   const [regionId, setRegionId] = useState('chennai');
   const [mode, setMode] = useState(storedMode);
+  const [units, setUnits] = useState(storedUnits);
   const [selectedId, setSelectedId] = useState(null);
   const [filters, setFilters] = useState(INITIAL_FILTERS);
   const [alertsConfig, setAlertsConfig] = useState(storedAlerts);
@@ -65,6 +71,7 @@ export default function App() {
     return () => clearInterval(timer);
   }, []);
   useEffect(() => { try { localStorage.setItem('skyscope:mode', mode); } catch { /* browser may block storage */ } }, [mode]);
+  useEffect(() => { try { localStorage.setItem('skyscope:units', JSON.stringify(units)); } catch { /* browser may block storage */ } }, [units]);
   useEffect(() => { try { localStorage.setItem('skyscope:alerts', JSON.stringify(alertsConfig)); } catch { /* ignore */ } }, [alertsConfig]);
   useEffect(() => { try { localStorage.setItem('skyscope:watchlists', JSON.stringify(watchlists)); } catch { /* ignore */ } }, [watchlists]);
   useEffect(() => {
@@ -121,6 +128,7 @@ export default function App() {
               aria-pressed={mode === key}>{label}</button>)}</div>
       </div>
       <div className="source-explainer" aria-live="polite">{MODE_DESCRIPTIONS[mode]}</div>
+      <UnitsControl units={units} onChange={setUnits} />
       <button className="focus-button" onClick={() => setFocusMap(v => !v)} aria-pressed={focusMap}
         title={focusMap ? "Restore the aircraft browsing list" : "Hide the list for a larger map"}>
         <span aria-hidden="true">{focusMap ? "▣" : "⛶"}</span> {focusMap ? "Show panels" : "Focus map"}</button>
@@ -155,16 +163,16 @@ export default function App() {
                 <option value="all">Any country</option>{countries.map(c => <option key={c} value={c}>{c}</option>)}
               </select>
               <div className="filter-two">
-                <div><label className="mini-label" htmlFor="min-alt">Minimum altitude (m)</label>
-                  <input id="min-alt" className="filter-input" type="number" min="0" value={filters.minAltitude}
-                    placeholder="Any" onChange={e => setFilter('minAltitude', e.target.value)} /></div>
-                <div><label className="mini-label" htmlFor="max-alt">Maximum altitude (m)</label>
-                  <input id="max-alt" className="filter-input" type="number" min="0" value={filters.maxAltitude}
-                    placeholder="Any" onChange={e => setFilter('maxAltitude', e.target.value)} /></div>
+                <div><label className="mini-label" htmlFor="min-alt">Minimum altitude ({unitSymbol('altitude', units)})</label>
+                  <input id="min-alt" className="filter-input" type="number" min="0" value={inputValueFromSI(filters.minAltitude, 'altitude', units)}
+                    placeholder="Any" onChange={e => setFilter('minAltitude', inputValueToSI(e.target.value, 'altitude', units))} /></div>
+                <div><label className="mini-label" htmlFor="max-alt">Maximum altitude ({unitSymbol('altitude', units)})</label>
+                  <input id="max-alt" className="filter-input" type="number" min="0" value={inputValueFromSI(filters.maxAltitude, 'altitude', units)}
+                    placeholder="Any" onChange={e => setFilter('maxAltitude', inputValueToSI(e.target.value, 'altitude', units))} /></div>
               </div>
-              <label className="mini-label" htmlFor="min-speed">Minimum speed (m/s)</label>
-              <input id="min-speed" className="filter-input" type="number" min="0" value={filters.minSpeed}
-                placeholder="Any" onChange={e => setFilter('minSpeed', e.target.value)} />
+              <label className="mini-label" htmlFor="min-speed">Minimum ground speed ({unitSymbol('speed', units)})</label>
+              <input id="min-speed" className="filter-input" type="number" min="0" value={inputValueFromSI(filters.minSpeed, 'speed', units)}
+                placeholder="Any" onChange={e => setFilter('minSpeed', inputValueToSI(e.target.value, 'speed', units))} />
             </div>
           </details>
           <details className="expandable watch-details">
@@ -176,7 +184,7 @@ export default function App() {
         <section className="flight-section" aria-label="Aircraft list">
           <div className="list-guide">Choose an aircraft to see its details <span aria-hidden="true">↗</span></div>
           <FlightList flights={filtered} selected={selectedId} onSelect={chooseFlight}
-            watched={watched} toggleWatch={toggleWatch} now={now} />
+            watched={watched} toggleWatch={toggleWatch} now={now} units={units} />
         </section>
       </aside>
 
@@ -237,16 +245,16 @@ export default function App() {
         <div className="inspector-top"><span className="eyebrow">STEP 2 / INSPECT</span><h2>Aircraft details</h2>
           <p>{selected ? 'Latest reported details for your selection' : 'Select a marker or a flight from the list'}</p></div>
         <section className="panel-section selected-panel" aria-label="Selected aircraft">
-          <FlightDetails flight={selected} now={now} /></section>
+          <FlightDetails flight={selected} now={now} units={units} /></section>
         <details className="expandable sidebar-expand" key={`trail-${selectedId || 'none'}`}>
           <summary>Flight trail and replay <span className="count-pill">{history.length} points</span></summary>
           <ReplayPanel flight={selected} history={history} cursor={replayCursor}
-            setCursor={setReplayCursor} mode={mode} />
+            setCursor={setReplayCursor} mode={mode} units={units} />
         </details>
         <SituationPanel aircraft={flights} region={region} now={now} change={change}
-          watched={watched} alertsConfig={alertsConfig} onSelect={chooseFlight} source={sourceKind} />
+          watched={watched} alertsConfig={alertsConfig} onSelect={chooseFlight} source={sourceKind} units={units} />
         <details className="expandable sidebar-expand alerts-expand"><summary>Custom observation alerts <span className="count-pill">{currentAlerts.length}</span></summary>
-          <AlertsPanel config={alertsConfig} onChange={setAlertsConfig} alerts={currentAlerts} onSelect={chooseFlight} />
+          <AlertsPanel config={alertsConfig} onChange={setAlertsConfig} alerts={currentAlerts} onSelect={chooseFlight} units={units} />
         </details>
         <div className="sidebar-footer">Informational tracking only. Not for navigation, separation, or safety decisions.</div>
       </aside>

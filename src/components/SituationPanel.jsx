@@ -1,9 +1,10 @@
+import { attentionNoteForUnits } from '../lib/format.js';
 import { attentionQueue, compassActivity, densityGrid, signalSummary } from '../lib/insights.js';
 import { timeText } from '../lib/format.js';
 
 /** Show the review queue first; data diagnostics are available on demand. */
 export default function SituationPanel({ aircraft, region, now, change, watched,
-  alertsConfig, onSelect, source }) {
+  alertsConfig, onSelect, source, units }) {
   const signal = signalSummary(aircraft, now);
   const density = densityGrid(aircraft, region.bounds);
   const compass = compassActivity(aircraft, region.center);
@@ -12,7 +13,7 @@ export default function SituationPanel({ aircraft, region, now, change, watched,
   const row = (item, index) => <button className="attention-row" key={item.icao24}
     onClick={() => onSelect(item.icao24)} title={`Inspect ${item.label}`}>
     <span className="queue-index">{String(index + 1).padStart(2, '0')}</span>
-    <span className="queue-content"><b>{item.label}</b><small>{item.notes[0]}</small></span>
+    <span className="queue-content"><b>{item.label}</b><small>{attentionNoteForUnits(item.notes[0], units)}</small></span>
     <span className={`quality-chip quality-${item.quality}`}>{item.quality}</span>
   </button>;
 

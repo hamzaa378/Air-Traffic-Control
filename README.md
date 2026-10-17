@@ -1,6 +1,13 @@
 > **v2.1 test-fix release (17 October 2026):** Fixes the five backend pytest failures seen when an actual OpenSky `.env` file is configured. The backend test suite now isolates credentials automatically, including a regression test. No frontend or production API behavior was changed. Read [`docs/TEST_AUTH_FIX.md`](docs/TEST_AUTH_FIX.md).
 
-# SkyScope | Air Traffic Control — Daylight Atlas v3
+## v3.1: user-selectable aviation units
+
+By default the interface now displays **ground speed in knots**, **altitude in feet**, and **vertical speed in feet per minute** (signed for climb/descent). Use the **Units** control in the top settings bar to choose Aviation, Metric, or set each measurement separately. These choices change what users see in the aircraft list, inspector, filters, alerts, review notices, and replay; calculations, stored history, API responses, and JSON exports remain SI.
+
+A separate **Speed explained** section distinguishes horizontal/ground speed, airspeed, and wind speed. OpenSky state vectors only supply ground speed; true/indicated airspeed and wind correctly show **Not available** instead of guesses. See [Aviation measurements and code guide](docs/UNITS_AND_SPEED_SOURCES.md).
+
+
+# SkyScope | Air Traffic Control — Daylight Atlas v3.1
 
 An Airspace Pulse React + Python dashboard for the **CodeChef-VIT 2026–27 promotional cycle**, **Frontend Development: Air Traffic Control** (task sheet pages 8–9). It maps actual OpenSky aircraft state vectors and handles incomplete, late, and unavailable observations. The separate Demo mode uses **synthetic** aircraft, never presents them as real flights, and works without API credentials.
 

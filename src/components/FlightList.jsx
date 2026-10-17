@@ -1,7 +1,7 @@
 import { altitudeText, speedText } from '../lib/format.js';
 import { observationState } from '../lib/insights.js';
 
-export default function FlightList({ flights, selected, onSelect, watched, toggleWatch, now }) {
+export default function FlightList({ flights, selected, onSelect, watched, toggleWatch, now, units }) {
   const pinned = new Set(watched);
   return <div className="flight-list" role="list" aria-label="Aircraft in selected region">
     {flights.length === 0 && <div className="empty-small">No matching aircraft. Change the filters or try Demo.</div>}
@@ -11,8 +11,8 @@ export default function FlightList({ flights, selected, onSelect, watched, toggl
         <span className="aircraft-icon" aria-hidden="true">✈</span>
         <span className="flight-primary"><b>{plane.callsign || plane.icao24.toUpperCase()}</b>
           <small><i className={`pill-dot ${observationState(plane, now)}`}/>{plane.country} {plane.status === 'left' ? '· Not in sample' : ''}</small></span>
-        <span className="flight-metrics"><b>{altitudeText(plane.geoAltitude ?? plane.baroAltitude)}</b>
-          <small>{speedText(plane.velocity)}</small></span>
+        <span className="flight-metrics"><b>{altitudeText(plane.geoAltitude ?? plane.baroAltitude, units)}</b>
+          <small>{speedText(plane.velocity, units)}</small></span>
       </button>
       <button className={`star-button ${pinned.has(plane.icao24) ? 'active' : ''}`}
         aria-label={`${pinned.has(plane.icao24) ? 'Unpin' : 'Pin'} ${plane.callsign || plane.icao24}`}
